@@ -1,0 +1,110 @@
+#include <SDL.h>
+#include <SDL_image.h>
+#include <iostream>
+
+int main(int argc, char* argv[]) {
+    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+        std::cerr << "SDL2 초기화 실패: " << SDL_GetError() << std::endl;
+        return -1;
+    }
+
+    if (IMG_Init(IMG_INIT_PNG | IMG_INIT_JPG) == 0) {
+        std::cerr << "SDL_image 초기화 실패: " << IMG_GetError() << std::endl;
+        SDL_Quit();
+        return -1;
+    }
+
+    SDL_Window* window = SDL_CreateWindow("Image Display", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 600, SDL_WINDOW_SHOWN);
+    if (!window) {
+        std::cerr << "윈도우 생성 실패: " << SDL_GetError() << std::endl;
+        IMG_Quit();
+        SDL_Quit();
+        return -1;
+    }
+
+    SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+    if (!renderer) {
+        std::cerr << "렌더러 생성 실패: " << SDL_GetError() << std::endl;
+        SDL_DestroyWindow(window);
+        IMG_Quit();
+        SDL_Quit();
+        return -1;
+    }
+
+    SDL_Surface* imagePNG = IMG_Load("jcshim.png");
+    if (!imagePNG) {
+        std::cerr << "PNG 이미지 로드 실패: " << IMG_GetError() << std::endl;
+        SDL_DestroyRenderer(renderer);
+        SDL_DestroyWindow(window);
+        IMG_Quit();
+        SDL_Quit();
+        return -1;
+    }
+
+    SDL_Texture* texturePNG = SDL_CreateTextureFromSurface(renderer, imagePNG);
+    SDL_FreeSurface(imagePNG);
+
+    if (!texturePNG) {
+        std::cerr << "PNG 텍스처 생성 실패: " << SDL_GetError() << std::endl;
+        SDL_DestroyRenderer(renderer);
+        SDL_DestroyWindow(window);
+        IMG_Quit();
+        SDL_Quit();
+        return -1;
+    }
+
+    SDL_Surface* imageJPG = IMG_Load("jcshim.jpg");
+    if (!imageJPG) {
+        std::cerr << "JPG 이미지 로드 실패: " << IMG_GetError() << std::endl;
+        SDL_DestroyTexture(texturePNG);
+        SDL_DestroyRenderer(renderer);
+        SDL_DestroyWindow(window);
+        IMG_Quit();
+        SDL_Quit();
+        return -1;
+    }
+
+    SDL_Texture* textureJPG = SDL_CreateTextureFromSurface(renderer, imageJPG);
+    SDL_FreeSurface(imageJPG);
+
+    if (!textureJPG) {
+        std::cerr << "JPG 텍스처 생성 실패: " << SDL_GetError() << std::endl;
+        SDL_DestroyTexture(texturePNG);
+        SDL_DestroyRenderer(renderer);
+        SDL_DestroyWindow(window);
+        IMG_Quit();
+        SDL_Quit();
+        return -1;
+    }
+
+    bool quit = false;
+    SDL_Event e;
+
+    while (!quit) {
+        while (SDL_PollEvent(&e) != 0) {
+            if (e.type == SDL_QUIT) {
+                quit = true;
+            }
+        }
+
+        SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+        SDL_RenderClear(renderer);
+
+        SDL_Rect rectPNG = { 50, 150, 300, 300 };
+        SDL_RenderCopy(renderer, texturePNG, nullptr, &rectPNG);
+
+        SDL_Rect rectJPG = { 400, 150, 300, 300 };
+        SDL_RenderCopy(renderer, textureJPG, nullptr, &rectJPG);
+
+        SDL_RenderPresent(renderer);
+    }
+
+    SDL_DestroyTexture(texturePNG);
+    SDL_DestroyTexture(textureJPG);
+    SDL_DestroyRenderer(renderer);
+    SDL_DestroyWindow(window);
+    IMG_Quit();
+    SDL_Quit();
+
+    return 0;
+}
